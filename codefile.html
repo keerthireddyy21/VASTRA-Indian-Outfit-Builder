@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VASTRA — Indian Outfit Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Mukta:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<style>
+/* ══════════════════════════════════════
+   TOKENS & RESET
+══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --saffron:#FF6B00;
+  --saffron2:#e05a00;
+  --gold:#FFB300;
+  --gold2:#e09e00;
+  --maroon:#8B0000;
+  --maroon2:#6b0000;
+  --cream:#FFF8EE;
+  --cream2:#FFF0D6;
+  --dark:#1A0A00;
+  --dark2:#2d1500;
+  --border:#e8d5b0;
+  --border2:#d4b88a;
+  --muted:#9a7a50;
+  --muted2:#c4a070;
+  --green:#2d6a2d;
+  --surface:#fffaf3;
+  --surface2:#fff4e0;
+
+  --font-h:'Yatra One',cursive;
+  --font-b:'Mukta',sans-serif;
+  --font-m:'DM Mono',monospace;
+  --ease:cubic-bezier(0.4,0,0.2,1);
+  --trans:all 0.22s var(--ease);
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-b);
+  background:var(--cream);
+  color:var(--dark);
+  height:100vh;overflow:hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--cream2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+/* Mandala background pattern */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(255,107,0,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255,179,0,0.05) 0%, transparent 40%),
+    radial-gradient(circle at 60% 80%, rgba(139,0,0,0.03) 0%, transparent 40%);
+  pointer-events:none;z-index:0;
+}
+
+/* Subtle geometric border pattern on top */
+body::after{
+  content:'';position:fixed;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--maroon),var(--saffron),var(--gold),var(--saffron),var(--maroon));
+  z-index:200;
+}
+
+#app{display:flex;flex-direction:column;height:100vh;overflow:hidden;position:relative;z-index:1}
+
+/* ══════════════════════════════════════
+   TOPBAR
+══════════════════════════════════════ */
+.topbar{
+  height:60px;flex-shrink:0;
+  display:flex;align-items:center;
+  background:var(--dark);
+  border-bottom:2px solid var(--saffron);
+  padding:0;z-index:50;
+  background-image:
+    repeating-linear-gradient(90deg,transparent,transparent 20px,rgba(255,107,0,0.03) 20px,rgba(255,107,0,0.03) 21px);
+}
+
+.logo-zone{
+  padding:0 1.5rem;height:100%;
+  display:flex;align-items:center;gap:0.6rem;
+  border-right:1px solid rgba(255,107,0,0.3);
+}
+.logo-icon{font-size:1.5rem;animation:spin 8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.logo-text{
+  font-family:var(--font-h);
+  font-size:1.6rem;
+  color:var(--gold);
+  letter-spacing:0.05em;
+  line-height:1;
+}
+.logo-sub{
+  font-family:var(--font-m);font-size:0.5rem;
+  letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--saffron);opacity:0.8;margin-top:0.1rem;
+}
+
+.top-nav{display:flex;height:100%}
+.tnav-btn{
+  padding:0 1.1rem;height:100%;
+  font-family:var(--font-b);font-size:0.8rem;font-weight:600;
+  background:transparent;border:none;color:rgba(255,248,238,0.5);
+  border-bottom:2px solid transparent;
+  transition:var(--trans);letter-spacing:0.03em;
+}
+.tnav-btn:hover{color:var(--cream)}
+.tnav-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tnav-badge{
+  background:var(--saffron);color:#fff;
+  font-size:0.55rem;font-weight:700;
+  padding:0.1rem 0.35rem;border-radius:2px;margin-left:0.3rem;
+}
+
+.top-right{margin-left:auto;display:flex;align-items:center;height:100%}
+.tright-item{
+  padding:0 1rem;height:100%;
+  display:flex;align-items:center;gap:0.5rem;
+  border-left:1px solid rgba(255,107,0,0.2);
+  font-family:var(--font-m);font-size:0.62rem;
+  color:rgba(255,248,238,0.5);letter-spacing:0.06em;
+  transition:var(--trans);
+}
+.tright-item:hover{background:rgba(255,107,0,0.08);color:var(--cream)}
+.tright-item.accent{color:var(--gold)}
+.api-dot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.api-dot.live{background:#4caf50;box-shadow:0 0 6px #4caf50}
+.rupee-count{color:var(--saffron);font-weight:600}
+
+/* ══════════════════════════════════════
+   WORKSPACE
+══════════════════════════════════════ */
+.workspace{display:flex;flex:1;overflow:hidden}
+
+/* ══════════════════════════════════════
+   LEFT — CATALOG
+══════════════════════════════════════ */
+.left{
+  width:315px;flex-shrink:0;
+  display:flex;flex-direction:column;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  overflow:hidden;
+}
+
+.panel-top{
+  padding:0.9rem;border-bottom:1px solid var(--border);flex-shrink:0;
+  background:var(--surface2);
+}
+.panel-label{
+  font-family:var(--font-m);font-size:0.56rem;
+  letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:0.6rem;
+  display:flex;align-items:center;gap:0.4rem;
+}
+.panel-label::before{content:'◆';color:var(--saffron);font-size:0.5rem}
+
+.search-row{
+  display:flex;align-items:center;gap:0.5rem;
+  background:var(--cream);border:1.5px solid var(--border);
+  border-radius:3px;padding:0 0.7rem;margin-bottom:0.6rem;
+  transition:border-color 0.18s;
+}
+.search-row:focus-within{border-color:var(--saffron)}
+.search-row span{color:var(--muted2);font-size:0.85rem}
+.search-row input{
+  flex:1;padding:0.5rem 0;background:transparent;
+  border:none;color:var(--dark);font-family:var(--font-b);font-size:0.8rem;outline:none;
+}
+.search-row input::placeholder{color:var(--muted2)}
+
+.sort-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.6rem}
+.sort-lbl{font-family:var(--font-m);font-size:0.58rem;color:var(--muted);letter-spacing:0.06em}
+.sort-sel{
+  background:var(--cream);border:1px solid var(--border);
+  color:var(--dark);font-family:var(--font-m);font-size:0.6rem;
+  padding:0.22rem 0.5rem;border-radius:3px;outline:none;
+}
+
+/* Category pills */
+.cats{display:flex;gap:0.3rem;flex-wrap:wrap}
+.cat-pill{
+  padding:0.2rem 0.6rem;
+  font-family:var(--font-b);font-size:0.68rem;font-weight:600;
+  border:1.5px solid var(--border);background:transparent;color:var(--muted);
+  border-radius:99px;transition:var(--trans);
+}
+.cat-pill:hover{border-color:var(--saffron);color:var(--saffron)}
+.cat-pill.on{background:var(--saffron);color:#fff;border-color:var(--saffron)}
+
+/* Items grid */
+.items-scroll{flex:1;overflow-y:auto;padding:0.75rem}
+.items-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+
+.item-card{
+  background:var(--cream);border:1.5px solid var(--border);
+  border-radius:6px;overflow:hidden;position:relative;
+  transition:var(--trans);
+  animation:fadeUp 0.3s var(--ease) both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.item-card:hover{border-color:var(--saffron);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,0,0.12)}
+.item-card.picked{border-color:var(--saffron);background:#fff5ec}
+.item-card.picked::after{
+  content:'✓';position:absolute;bottom:0.4rem;right:0.4rem;
+  width:18px;height:18px;background:var(--saffron);color:#fff;
+  font-size:0.6rem;font-weight:900;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.item-thumb{
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  font-size:2.6rem;background:var(--cream2);border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.item-thumb img{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;transition:transform 0.3s var(--ease);
+}
+.item-card:hover .item-thumb img{transform:scale(1.06)}
+.item-thumb .emoji-fallback{position:relative;z-index:1}
+.item-thumb::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(255,179,0,0.08),transparent 65%);
+}
+.new-tag{
+  position:absolute;top:0.35rem;left:0.35rem;
+  background:var(--maroon);color:#fff;
+  font-family:var(--font-m);font-size:0.48rem;font-weight:600;
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:0.12rem 0.35rem;border-radius:2px;
+}
+.wish-heart{
+  position:absolute;top:0.35rem;right:0.35rem;
+  width:22px;height:22px;background:rgba(255,248,238,0.9);
+  border:1px solid var(--border);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;opacity:0;transition:opacity 0.15s;
+  color:var(--muted2);
+}
+.item-card:hover .wish-heart{opacity:1}
+.wish-heart.on{opacity:1!important;color:var(--maroon);border-color:var(--maroon)}
+
+.item-info{padding:0.5rem 0.55rem}
+.i-brand{font-family:var(--font-m);font-size:0.55rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.1rem}
+.i-name{font-size:0.73rem;font-weight:600;margin-bottom:0.18rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dark)}
+.i-row{display:flex;align-items:center;justify-content:space-between}
+.i-price{font-family:var(--font-m);font-size:0.75rem;color:var(--saffron);font-weight:600}
+.i-stars{font-size:0.58rem;color:var(--gold)}
+
+.color-dots{display:flex;gap:3px;padding:0 0.55rem 0.45rem}
+.cdot{width:8px;height:8px;border-radius:50%;border:1px solid var(--border)}
+
+/* ══════════════════════════════════════
+   CENTER — BUILDER
+══════════════════════════════════════ */
+.center{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--cream)}
+
+.builder-bar{
+  padding:0.8rem 1.4rem;border-bottom:1.5px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);flex-shrink:0;
+}
+.builder-title{font-family:var(--font-h);font-size:1.7rem;color:var(--dark);letter-spacing:0.03em;line-height:1}
+.builder-title span{color:var(--saffron)}
+.outfit-name-input{
+  background:transparent;border:none;border-bottom:1.5px solid var(--border);
+  color:var(--muted);font-family:var(--font-b);font-size:0.75rem;font-weight:500;
+  padding:0.1rem 0.3rem;outline:none;width:170px;margin-left:0.5rem;
+  transition:border-color 0.18s,color 0.18s;
+}
+.outfit-name-input:focus{border-color:var(--saffron);color:var(--dark)}
+.outfit-name-input::placeholder{color:var(--muted2)}
+
+.btns{display:flex;gap:0.4rem;align-items:center}
+.btn{
+  padding:0.42rem 0.9rem;
+  font-family:var(--font-b);font-size:0.75rem;font-weight:600;
+  border:1.5px solid var(--border);background:transparent;color:var(--muted);
+  border-radius:4px;transition:var(--trans);
+}
+.btn:hover:not(:disabled){border-color:var(--dark);color:var(--dark)}
+.btn:disabled{opacity:0.3}
+.btn-primary{background:var(--saffron);color:#fff;border-color:var(--saffron)}
+.btn-primary:hover:not(:disabled){background:var(--saffron2);border-color:var(--saffron2)}
+.btn-outline-saffron{border-color:var(--saffron);color:var(--saffron)}
+.btn-outline-saffron:hover{background:rgba(255,107,0,0.08)}
+.btn-danger{border-color:#cc2222;color:#cc2222}
+.btn-danger:hover{background:#cc2222;color:#fff}
+.btn-icon{width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;font-size:1rem}
+
+/* Canvas */
+.canvas{flex:1;overflow-y:auto;padding:1.2rem 1.4rem;display:flex;flex-direction:column;gap:1rem}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.7rem}
+.stat-box{
+  background:var(--surface);border:1.5px solid var(--border);border-radius:6px;
+  padding:0.7rem 0.9rem;
+}
+.stat-lbl{font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem}
+.stat-val{font-family:var(--font-h);font-size:1.5rem;color:var(--dark);line-height:1}
+.stat-sub{font-family:var(--font-m);font-size:0.58rem;color:var(--muted2);margin-top:0.12rem}
+
+/* Compat card */
+.compat-box{
+  background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:0.7rem 0.9rem;
+}
+.compat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem}
+.compat-score-val{font-family:var(--font-h);font-size:1.5rem}
+.compat-track{height:4px;background:var(--cream2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+.compat-fill{height:100%;border-radius:99px;transition:width 0.7s var(--ease)}
+.compat-tags{display:flex;gap:0.3rem;margin-top:0.45rem;flex-wrap:wrap}
+.ctag{
+  font-family:var(--font-m);font-size:0.54rem;letter-spacing:0.06em;text-transform:uppercase;
+  padding:0.12rem 0.4rem;border-radius:99px;
+  background:rgba(255,107,0,0.08);border:1px solid rgba(255,107,0,0.25);color:var(--saffron);
+}
+
+/* Outfit slots */
+.slots-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(2,1fr);gap:0.9rem;
+  min-height:320px;
+}
+.slot{
+  border:1.5px dashed var(--border2);border-radius:8px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--surface);position:relative;overflow:hidden;
+  transition:var(--trans);aspect-ratio:3/4;
+}
+.slot.has-item{border-style:solid;border-color:var(--border)}
+.slot.drag-over{border-color:var(--saffron);background:rgba(255,107,0,0.04);border-style:solid}
+
+.slot-empty-emoji{font-size:1.8rem;opacity:0.15;margin-bottom:0.3rem}
+.slot-empty-label{
+  font-family:var(--font-b);font-size:0.65rem;font-weight:600;
+  color:var(--muted2);letter-spacing:0.04em;
+}
+
+/* Filled slot */
+.slot-content{width:100%;height:100%;display:flex;flex-direction:column}
+.slot-emoji-area{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  font-size:3.5rem;position:relative;overflow:hidden;
+  background:linear-gradient(160deg,var(--cream2),var(--surface2));
+}
+.slot-emoji-area::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 30% 20%,rgba(255,179,0,0.08),transparent 60%);
+}
+/* Decorative corner pattern */
+.slot-emoji-area::before{
+  content:'✦';position:absolute;top:0.4rem;left:0.4rem;
+  font-size:0.6rem;color:var(--gold);opacity:0.4;
+}
+.slot-footer{
+  background:var(--dark);color:var(--cream);
+  padding:0.5rem 0.6rem;border-top:1px solid var(--dark2);
+}
+.slot-name{font-size:0.68rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:0.1rem}
+.slot-price{font-family:var(--font-m);font-size:0.65rem;color:var(--gold)}
+.slot-rm{
+  position:absolute;top:0.4rem;right:0.4rem;
+  width:20px;height:20px;background:var(--maroon);color:#fff;
+  border:none;border-radius:3px;font-size:0.65rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity 0.15s;z-index:2;
+}
+.slot:hover .slot-rm{opacity:1}
+
+/* Summary */
+.summary-bar{
+  border-top:1.5px solid var(--border);padding:0.75rem 1.4rem;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--dark);flex-shrink:0;
+}
+.summary-chips{display:flex;gap:0.4rem;flex-wrap:wrap;flex:1}
+.s-chip{
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.06em;
+  padding:0.2rem 0.55rem;border-radius:99px;
+  background:rgba(255,248,238,0.08);border:1px solid rgba(255,248,238,0.15);color:rgba(255,248,238,0.4);
+}
+.s-chip.active{background:rgba(255,107,0,0.15);border-color:rgba(255,107,0,0.4);color:var(--saffron)}
+.summary-total{
+  font-family:var(--font-h);font-size:2rem;color:var(--gold);margin-left:1rem;
+  display:flex;align-items:baseline;gap:0.2rem;
+}
+.rupee-sym{font-size:1.3rem;color:var(--saffron)}
+
+/* ══════════════════════════════════════
+   RIGHT — LOOKBOOK / WISHLIST
+══════════════════════════════════════ */
+.right{
+  width:265px;flex-shrink:0;
+  display:flex;flex-direction:column;
+  background:var(--surface);border-left:1.5px solid var(--border);
+  overflow:hidden;
+}
+.right-head{
+  padding:0.9rem;border-bottom:1.5px solid var(--border);flex-shrink:0;
+  background:var(--surface2);
+}
+.right-tabs{display:flex;gap:0.3rem}
+.r-tab{
+  flex:1;padding:0.35rem;text-align:center;
+  font-family:var(--font-b);font-size:0.7rem;font-weight:600;
+  border:1.5px solid var(--border);background:transparent;color:var(--muted);
+  border-radius:4px;transition:var(--trans);
+}
+.r-tab:hover{color:var(--dark)}
+.r-tab.on{background:var(--saffron);color:#fff;border-color:var(--saffron)}
+
+.right-body{flex:1;overflow-y:auto;padding:0.75rem;display:flex;flex-direction:column;gap:0.6rem}
+
+/* Look card */
+.look-card{
+  background:var(--cream);border:1.5px solid var(--border);border-radius:6px;
+  overflow:hidden;transition:var(--trans);animation:fadeUp 0.25s var(--ease) both;
+}
+.look-card:hover{border-color:var(--saffron)}
+.look-preview{
+  display:flex;padding:0.5rem;gap:0.3rem;
+  background:var(--cream2);border-bottom:1px solid var(--border);flex-wrap:wrap;
+}
+.look-em{
+  width:30px;height:30px;background:var(--surface);border:1px solid var(--border);
+  border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1rem;
+}
+.look-body{padding:0.6rem}
+.look-name{font-size:0.82rem;font-weight:700;margin-bottom:0.15rem;color:var(--dark)}
+.look-meta{font-family:var(--font-m);font-size:0.57rem;color:var(--muted);margin-bottom:0.5rem}
+.look-acts{display:flex;gap:0.3rem}
+.look-btn{
+  flex:1;padding:0.28rem;text-align:center;
+  font-family:var(--font-b);font-size:0.63rem;font-weight:600;
+  border:1px solid var(--border);background:transparent;color:var(--muted);
+  border-radius:3px;transition:var(--trans);
+}
+.look-btn:hover{background:var(--saffron);color:#fff;border-color:var(--saffron)}
+.look-btn.del:hover{background:var(--maroon);color:#fff;border-color:var(--maroon)}
+
+/* Wish card */
+.wish-card{
+  background:var(--cream);border:1.5px solid var(--border);border-radius:6px;
+  padding:0.65rem;display:flex;gap:0.6rem;align-items:center;
+  transition:var(--trans);animation:fadeUp 0.2s var(--ease) both;
+}
+.wish-card:hover{border-color:var(--maroon)}
+.wish-ico{
+  width:40px;height:40px;background:var(--cream2);border:1px solid var(--border);
+  border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;
+}
+.wish-info{flex:1;min-width:0}
+.wish-name{font-size:0.76rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dark)}
+.wish-brand{font-family:var(--font-m);font-size:0.55rem;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
+.wish-price{font-family:var(--font-m);font-size:0.7rem;color:var(--saffron);margin-top:0.12rem}
+.wish-add-btn{
+  width:26px;height:26px;background:var(--cream2);border:1px solid var(--border);
+  border-radius:3px;display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;transition:var(--trans);flex-shrink:0;
+}
+.wish-add-btn:hover{background:var(--saffron);color:#fff;border-color:var(--saffron)}
+
+.panel-empty{
+  text-align:center;padding:2.5rem 1rem;
+  font-family:var(--font-b);font-size:0.75rem;color:var(--muted2);line-height:2;
+}
+.panel-empty-ico{font-size:2.2rem;opacity:0.3;margin-bottom:0.5rem}
+
+/* ══════════════════════════════════════
+   MODAL
+══════════════════════════════════════ */
+.overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(26,10,0,0.75);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeIn 0.2s;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--surface);border:2px solid var(--border);border-radius:8px;
+  width:440px;overflow:hidden;
+  animation:modalUp 0.28s var(--ease);
+  /* Decorative top border */
+  border-top:3px solid var(--saffron);
+}
+@keyframes modalUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.modal-head{
+  padding:1.3rem 1.5rem;border-bottom:1px solid var(--border);
+  background:var(--surface2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-family:var(--font-h);font-size:1.7rem;color:var(--dark)}
+.modal-title span{color:var(--saffron)}
+.modal-x{background:none;border:none;color:var(--muted);font-size:1.1rem;transition:color 0.15s}
+.modal-x:hover{color:var(--dark)}
+.modal-body{padding:1.4rem}
+.f-label{
+  font-family:var(--font-m);font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:0.4rem;display:block;
+}
+.f-input{
+  width:100%;padding:0.6rem 0.85rem;
+  background:var(--cream);border:1.5px solid var(--border);
+  color:var(--dark);font-family:var(--font-b);font-size:0.85rem;font-weight:500;
+  border-radius:4px;outline:none;margin-bottom:1rem;transition:border-color 0.18s;
+}
+.f-input:focus{border-color:var(--saffron)}
+.outfit-preview{
+  display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:1rem;padding:0.7rem;
+  background:var(--cream2);border:1px solid var(--border);border-radius:4px;
+}
+.prev-tag{
+  display:flex;align-items:center;gap:0.3rem;
+  font-family:var(--font-b);font-size:0.65rem;font-weight:600;
+  padding:0.18rem 0.5rem;background:var(--cream);
+  border:1px solid var(--border);border-radius:99px;color:var(--dark);
+}
+.modal-info{font-family:var(--font-m);font-size:0.63rem;color:var(--muted);margin-bottom:1.2rem;line-height:1.8}
+.modal-info b{color:var(--saffron)}
+.modal-actions{display:flex;gap:0.5rem}
+
+/* ══════════════════════════════════════
+   CART DRAWER
+══════════════════════════════════════ */
+.cart-wrap{position:fixed;inset:0;z-index:200;display:flex;justify-content:flex-end}
+.cart-bg{flex:1;background:rgba(26,10,0,0.65);backdrop-filter:blur(4px)}
+.cart-drawer{
+  width:390px;background:var(--surface);
+  border-left:2px solid var(--border);
+  display:flex;flex-direction:column;height:100%;
+  animation:slideR 0.3s var(--ease);
+  border-top:3px solid var(--saffron);
+}
+@keyframes slideR{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+.cart-head{
+  padding:1.1rem 1.4rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+  background:var(--surface2);
+}
+.cart-head-title{font-family:var(--font-h);font-size:1.6rem;color:var(--dark)}
+.cart-count{
+  font-family:var(--font-m);font-size:0.6rem;letter-spacing:0.08em;
+  background:rgba(255,107,0,0.1);border:1px solid rgba(255,107,0,0.3);
+  color:var(--saffron);padding:0.15rem 0.45rem;border-radius:99px;
+}
+.cart-body{flex:1;overflow-y:auto;padding:1rem}
+.cart-empty{text-align:center;padding:3rem 1rem;font-family:var(--font-b);font-size:0.8rem;color:var(--muted2);line-height:2}
+.cart-empty-ico{font-size:2.2rem;opacity:0.25;margin-bottom:0.5rem}
+
+.ci{
+  display:flex;gap:0.75rem;align-items:center;
+  padding:0.75rem 0;border-bottom:1px solid var(--border);
+}
+.ci-pic{
+  width:50px;height:50px;background:var(--cream2);border:1px solid var(--border);
+  border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;
+}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-size:0.82rem;font-weight:700;margin-bottom:0.08rem;color:var(--dark)}
+.ci-brand{font-family:var(--font-m);font-size:0.56rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase}
+.ci-price{font-family:var(--font-m);font-size:0.76rem;color:var(--saffron);margin-top:0.18rem;font-weight:600}
+.ci-rm{background:none;border:none;color:var(--muted2);font-size:1rem;transition:color 0.15s;padding:0.2rem}
+.ci-rm:hover{color:var(--maroon)}
+
+.cart-foot{
+  padding:1.1rem 1.4rem;border-top:1px solid var(--border);
+  background:var(--dark);flex-shrink:0;
+}
+.total-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.8rem}
+.total-lbl{font-family:var(--font-m);font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,248,238,0.5)}
+.total-num{
+  font-family:var(--font-h);font-size:2rem;color:var(--gold);
+  display:flex;align-items:baseline;gap:0.2rem;
+}
+.total-num .rs{font-size:1.3rem;color:var(--saffron)}
+.checkout-btn{
+  width:100%;background:var(--saffron);color:#fff;border:none;
+  padding:0.85rem;font-family:var(--font-b);font-size:0.82rem;font-weight:700;
+  letter-spacing:0.05em;border-radius:4px;transition:background 0.18s;
+}
+.checkout-btn:hover{background:var(--saffron2)}
+.gst-note{
+  text-align:center;margin-top:0.5rem;
+  font-family:var(--font-m);font-size:0.56rem;color:rgba(255,248,238,0.3);letter-spacing:0.06em;
+}
+
+/* ══════════════════════════════════════
+   TOASTS
+══════════════════════════════════════ */
+.toasts{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;display:flex;flex-direction:column;gap:0.4rem;pointer-events:none}
+.toast{
+  background:var(--dark);border:1px solid var(--border2);border-left:3px solid var(--saffron);
+  padding:0.6rem 1.1rem;border-radius:4px;
+  font-family:var(--font-b);font-size:0.75rem;font-weight:500;color:var(--cream);
+  box-shadow:0 8px 32px rgba(26,10,0,0.3);
+  animation:toastIn 0.3s var(--ease),toastOut 0.3s var(--ease) 2.5s forwards;pointer-events:auto;
+}
+.toast.success{border-left-color:#4caf50}
+.toast.warn{border-left-color:var(--gold);color:var(--gold)}
+@keyframes toastIn{from{transform:translateX(10px);opacity:0}to{transform:none;opacity:1}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(8px)}}
+
+/* Loading */
+.loading-bar{
+  position:fixed;top:3px;left:0;right:0;height:2px;z-index:9990;
+  background:linear-gradient(90deg,var(--maroon),var(--saffron),var(--gold),var(--saffron),var(--maroon));
+  background-size:200%;animation:loadBar 1.4s linear infinite;
+}
+@keyframes loadBar{to{background-position:-200% 0}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="loading-bar" v-if="loading"></div>
+
+  <!-- ══ TOPBAR ══ -->
+  <div class="topbar">
+    <div class="logo-zone">
+      <span class="logo-icon">🪔</span>
+      <div>
+        <div class="logo-text">VASTRA</div>
+        <div class="logo-sub">Indian Outfit Builder</div>
+      </div>
+    </div>
+
+    <div class="top-nav">
+      <button class="tnav-btn" :class="{active:view==='builder'}" @click="view='builder'">Builder</button>
+      <button class="tnav-btn" :class="{active:view==='wishlist'}" @click="view='wishlist';rightTab='wishlist'">
+        Wishlist <span class="tnav-badge" v-if="wishlist.length">{{wishlist.length}}</span>
+      </button>
+      <button class="tnav-btn" :class="{active:view==='orders'}" @click="view='orders'">Orders</button>
+    </div>
+
+    <div class="top-right">
+      <div class="tright-item">
+        <span class="api-dot" :class="{live:apiLive}"></span>
+        {{ apiLive ? 'LIVE' : 'OFFLINE' }}
+      </div>
+      <div class="tright-item accent">
+        {{ filteredItems.length }} items
+      </div>
+      <div class="tright-item" @click="cartOpen=true">
+        🛒 Cart
+        <span class="tnav-badge" v-if="cart.length" style="margin-left:0.2rem">{{cart.length}}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ WORKSPACE ══ -->
+  <div class="workspace">
+
+    <!-- ══ LEFT: CATALOG ══ -->
+    <aside class="left">
+      <div class="panel-top">
+        <div class="panel-label">Product Catalog · {{ filteredItems.length }}</div>
+
+        <div class="search-row">
+          <span>🔍</span>
+          <input v-model="search" placeholder="Kurta, Fabindia, ethnic…" />
+          <span v-if="search" @click="search=''" style="color:var(--muted2);font-size:0.85rem">✕</span>
+        </div>
+
+        <div class="sort-row">
+          <span class="sort-lbl">Sort:</span>
+          <select class="sort-sel" v-model="sortBy">
+            <option value="default">Default</option>
+            <option value="price_asc">Price: Low → High</option>
+            <option value="price_desc">Price: High → Low</option>
+            <option value="rating">Top Rated</option>
+            <option value="new">Newest First</option>
+          </select>
+        </div>
+
+        <div class="cats">
+          <button v-for="c in CATS" :key="c" class="cat-pill" :class="{on:activeCat===c}" @click="activeCat=c">{{c}}</button>
+        </div>
+      </div>
+
+      <div class="items-scroll">
+        <div class="items-grid">
+          <div
+            v-for="(item,i) in filteredItems" :key="item.id"
+            class="item-card" :class="{picked:isInOutfit(item)}"
+            :style="{animationDelay:i*0.025+'s'}"
+            @click="toggleItem(item)"
+            draggable="true"
+            @dragstart="dragItem=item"
+          >
+            <div class="item-thumb">
+              <span class="new-tag" v-if="item.isNew">NEW</span>
+              <img v-if="item.image" :src="item.image" :alt="item.name" loading="lazy" @error="e=>{e.target.style.display='none';e.target.nextElementSibling.style.display='flex'}" />
+              <span class="emoji-fallback" :style="item.image?{display:'none'}:{}" >{{item.emoji}}</span>
+              <span class="wish-heart" :class="{on:isWished(item)}" @click.stop="toggleWish(item)">
+                {{ isWished(item) ? '♥' : '♡' }}
+              </span>
+            </div>
+            <div class="color-dots">
+              <div class="cdot" v-for="c in item.colors" :key="c" :style="{background:c}" :title="c"></div>
+            </div>
+            <div class="item-info">
+              <div class="i-brand">{{item.brand}}</div>
+              <div class="i-name">{{item.name}}</div>
+              <div class="i-row">
+                <div class="i-price">₹{{item.price.toLocaleString('en-IN')}}</div>
+                <div class="i-stars">★ {{item.rating}} <span style="color:var(--muted2)">({{item.reviews}})</span></div>
+              </div>
+            </div>
+          </div>
+          <div v-if="filteredItems.length===0" style="grid-column:span 2;text-align:center;padding:2rem;font-family:var(--font-b);font-size:0.8rem;color:var(--muted2)">
+            No items found 🙈
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ══ CENTER: BUILDER ══ -->
+    <main class="center">
+      <div class="builder-bar">
+        <div>
+          <div class="builder-title">
+            Create <span>Your Look</span> 🎨
+          </div>
+          <div style="margin-top:0.25rem">
+            <input class="outfit-name-input" v-model="outfitLabel" placeholder="Name your outfit…" />
+          </div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-danger btn-icon" @click="clearOutfit" :disabled="outfitItems.length===0" title="Clear">✕</button>
+          <button class="btn" @click="shuffleOutfit" title="Random outfit!">🎲 Shuffle</button>
+          <button class="btn" @click="addAllToCart" :disabled="outfitItems.length===0">+ Cart</button>
+          <button class="btn btn-outline-saffron" @click="openShare" :disabled="outfitItems.length===0">Share</button>
+          <button class="btn btn-primary" @click="openSave" :disabled="outfitItems.length===0">💾 Save</button>
+        </div>
+      </div>
+
+      <div class="canvas">
+        <!-- Stats -->
+        <div class="stats-row" v-if="outfitItems.length > 0">
+          <div class="compat-box">
+            <div class="compat-top">
+              <span class="stat-lbl">Style Match</span>
+              <span class="compat-score-val" :style="{color:compatColor}">{{compatScore}}%</span>
+            </div>
+            <div class="compat-track">
+              <div class="compat-fill" :style="{width:compatScore+'%',background:compatColor}"></div>
+            </div>
+            <div class="compat-tags" v-if="sharedTags.length">
+              <span class="ctag" v-for="t in sharedTags" :key="t">{{t}}</span>
+            </div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl">Pieces</div>
+            <div class="stat-val">{{outfitItems.length}}<span style="font-size:0.9rem;color:var(--muted2)">/6</span></div>
+            <div class="stat-sub">{{Object.keys(slots).length}} slots used</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-lbl">Avg Rating</div>
+            <div class="stat-val" style="color:var(--gold)">★ {{avgRating}}</div>
+            <div class="stat-sub">across all pieces</div>
+          </div>
+        </div>
+
+        <!-- Outfit slots -->
+        <div class="slots-grid">
+          <div
+            v-for="slot in SLOT_DEFS" :key="slot.key"
+            class="slot"
+            :class="{'has-item':slots[slot.key],'drag-over':dragOver===slot.key}"
+            @dragover.prevent="dragOver=slot.key"
+            @dragleave="dragOver=null"
+            @drop="onDrop(slot.key)"
+          >
+            <template v-if="slots[slot.key]">
+              <div class="slot-content">
+                <div class="slot-emoji-area">
+                  <img v-if="slots[slot.key].image" :src="slots[slot.key].image" :alt="slots[slot.key].name" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.92;" @error="e=>e.target.style.display='none'" />
+                  <span style="position:relative;z-index:1">{{slots[slot.key].emoji}}</span>
+                </div>
+                <div class="slot-footer">
+                  <div class="slot-name">{{slots[slot.key].name}}</div>
+                  <div class="slot-price">₹{{slots[slot.key].price.toLocaleString('en-IN')}}</div>
+                </div>
+              </div>
+              <button class="slot-rm" @click.stop="removeSlot(slot.key)">✕</button>
+            </template>
+            <template v-else>
+              <div class="slot-empty-emoji">{{slot.icon}}</div>
+              <div class="slot-empty-label">{{slot.label}}</div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary bar -->
+      <div class="summary-bar">
+        <div class="summary-chips">
+          <span class="s-chip" :class="{active:outfitItems.length>0}">{{outfitItems.length}} items</span>
+          <span class="s-chip active" v-for="tag in sharedTags" :key="tag">{{tag}}</span>
+        </div>
+        <div class="summary-total">
+          <span class="rupee-sym">₹</span>{{outfitTotal.toLocaleString('en-IN')}}
+        </div>
+      </div>
+    </main>
+
+    <!-- ══ RIGHT: LOOKS / WISHLIST ══ -->
+    <aside class="right">
+      <div class="right-head">
+        <div class="right-tabs">
+          <button class="r-tab" :class="{on:rightTab==='looks'}" @click="rightTab='looks'">
+            Looks <span v-if="savedOutfits.length">({{savedOutfits.length}})</span>
+          </button>
+          <button class="r-tab" :class="{on:rightTab==='wishlist'}" @click="rightTab='wishlist'">
+            Wishlist <span v-if="wishlist.length">({{wishlist.length}})</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="right-body">
+        <!-- LOOKS TAB -->
+        <template v-if="rightTab==='looks'">
+          <div class="panel-empty" v-if="savedOutfits.length===0">
+            <div class="panel-empty-ico">🪔</div>
+            Save your first outfit!<br/>
+            <span style="font-size:0.65rem;opacity:0.6">Build → Save</span>
+          </div>
+          <div class="look-card" v-for="o in savedOutfits" :key="o.id">
+            <div class="look-preview">
+              <div class="look-em" v-for="it in o.items.slice(0,5)" :key="it.id">{{it.emoji}}</div>
+            </div>
+            <div class="look-body">
+              <div class="look-name">{{o.name}}</div>
+              <div class="look-meta">₹{{totalOf(o.items).toLocaleString('en-IN')}} · {{o.items.length}} pieces · {{o.vibe||''}}</div>
+              <div class="look-acts">
+                <button class="look-btn" @click="loadOutfit(o)">Load</button>
+                <button class="look-btn" @click="addOutfitToCart(o)">Cart</button>
+                <button class="look-btn del" @click="deleteOutfit(o)">Delete</button>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- WISHLIST TAB -->
+        <template v-if="rightTab==='wishlist'">
+          <div class="panel-empty" v-if="wishlist.length===0">
+            <div class="panel-empty-ico">♡</div>
+            Tap ♡ on any item<br/>
+            <span style="font-size:0.65rem;opacity:0.6">to add to wishlist</span>
+          </div>
+          <div class="wish-card" v-for="item in wishlist" :key="item.id">
+            <div class="wish-ico">{{item.emoji}}</div>
+            <div class="wish-info">
+              <div class="wish-name">{{item.name}}</div>
+              <div class="wish-brand">{{item.brand}}</div>
+              <div class="wish-price">₹{{item.price.toLocaleString('en-IN')}}</div>
+            </div>
+            <button class="wish-add-btn" @click="toggleItem(item)" title="Add to outfit">+</button>
+          </div>
+        </template>
+      </div>
+    </aside>
+
+  </div><!-- /workspace -->
+
+  <!-- ══ SAVE MODAL ══ -->
+  <div class="overlay" v-if="saveModal" @click.self="saveModal=false">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">Save <span>Your Look</span> 💾</div>
+        <button class="modal-x" @click="saveModal=false">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="f-label">Outfit Name</label>
+        <input class="f-input" v-model="saveName" placeholder="e.g. Diwali Party Look, Office Casual" @keyup.enter="saveOutfit" autofocus />
+
+        <label class="f-label">Vibe / Style Tags</label>
+        <input class="f-input" v-model="saveVibe" placeholder="e.g. ethnic, festive, casual" />
+
+        <div class="outfit-preview">
+          <span class="prev-tag" v-for="it in outfitItems" :key="it.id">
+            {{it.emoji}} {{it.name}}
+          </span>
+        </div>
+
+        <div class="modal-info">
+          <b>{{outfitItems.length}}</b> pieces &nbsp;·&nbsp;
+          <b>₹{{outfitTotal.toLocaleString('en-IN')}}</b> total &nbsp;·&nbsp;
+          Match: <b :style="{color:compatColor}">{{compatScore}}%</b>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn" style="flex:1" @click="saveModal=false">Cancel</button>
+          <button class="btn btn-primary" style="flex:1" @click="saveOutfit" :disabled="!saveName.trim()">Save to Lookbook ✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SHARE MODAL ══ -->
+  <div class="overlay" v-if="shareModal" @click.self="shareModal=false">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">Share <span>Your Outfit</span></div>
+        <button class="modal-x" @click="shareModal=false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;gap:0.5rem;justify-content:center;font-size:2rem;flex-wrap:wrap;margin-bottom:1rem;padding:1rem;background:var(--cream2);border-radius:6px;border:1px solid var(--border)">
+          <span v-for="it in outfitItems" :key="it.id">{{it.emoji}}</span>
+        </div>
+        <div style="font-family:var(--font-m);font-size:0.62rem;color:var(--muted);margin-bottom:1rem;line-height:1.8;text-align:center">
+          {{ outfitItems.map(i=>i.name).join(' · ') }}<br/>
+          Total: ₹{{ outfitTotal.toLocaleString('en-IN') }}
+        </div>
+        <label class="f-label">Share Link</label>
+        <div style="display:flex;gap:0.5rem">
+          <input class="f-input" style="margin-bottom:0;flex:1" :value="shareLink" readonly />
+          <button class="btn btn-primary" @click="copyLink">Copy</button>
+        </div>
+        <div style="height:0.8rem"></div>
+        <button class="btn" style="width:100%" @click="shareModal=false">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ CART DRAWER ══ -->
+  <div class="cart-wrap" v-if="cartOpen">
+    <div class="cart-bg" @click="cartOpen=false"></div>
+    <div class="cart-drawer">
+      <div class="cart-head">
+        <div class="cart-head-title">🛒 Cart</div>
+        <span class="cart-count" v-if="cart.length">{{cart.length}} items</span>
+        <button class="btn btn-icon" @click="cartOpen=false" style="margin-left:auto;background:none;border:none;font-size:1.1rem;color:var(--muted)">✕</button>
+      </div>
+
+      <div class="cart-body">
+        <div class="cart-empty" v-if="cart.length===0">
+          <div class="cart-empty-ico">🛒</div>
+          Your cart is empty!<br/>Build an outfit and add items.
+        </div>
+        <div class="ci" v-for="(item,i) in cart" :key="i">
+          <div class="ci-pic">{{item.emoji}}</div>
+          <div class="ci-info">
+            <div class="ci-name">{{item.name}}</div>
+            <div class="ci-brand">{{item.brand}}</div>
+            <div class="ci-price">₹{{item.price.toLocaleString('en-IN')}}</div>
+          </div>
+          <button class="ci-rm" @click="cart.splice(i,1)">✕</button>
+        </div>
+      </div>
+
+      <div class="cart-foot" v-if="cart.length > 0">
+        <div class="total-row">
+          <span class="total-lbl">Total Amount</span>
+          <span class="total-num"><span class="rs">₹</span>{{cartTotal.toLocaleString('en-IN')}}</span>
+        </div>
+        <button class="checkout-btn" @click="checkout">Place Order →</button>
+        <div class="gst-note">* GST included · Free delivery above ₹999</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TOASTS ══ -->
+  <div class="toasts">
+    <div v-for="t in toasts" :key="t.id" class="toast" :class="t.type">{{t.msg}}</div>
+  </div>
+
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+
+const API = 'http://localhost:3000';
+
+const CATS = ['All','Ethnic Tops','Western Tops','Bottoms','Footwear','Bags','Jewellery','Accessories','Outerwear'];
+
+const SLOT_DEFS = [
+  {key:'outerwear',   label:'Outerwear',   icon:'🧥'},
+  {key:'top',         label:'Top / Kurti', icon:'👘'},
+  {key:'bottom',      label:'Bottom',      icon:'👖'},
+  {key:'footwear',    label:'Footwear',    icon:'🥿'},
+  {key:'bag',         label:'Bag / Potli', icon:'👜'},
+  {key:'jewellery',   label:'Jewellery',   icon:'💍'},
+];
+
+const CAT_SLOT = {
+  'Ethnic Tops':   'top',
+  'Western Tops':  'top',
+  'Bottoms':       'bottom',
+  'Footwear':      'footwear',
+  'Bags':          'bag',
+  'Jewellery':     'jewellery',
+  'Accessories':   'jewellery',
+  'Outerwear':     'outerwear',
+};
+
+createApp({
+  setup() {
+    const loading    = ref(false);
+    const apiLive    = ref(false);
+    const view       = ref('builder');
+    const rightTab   = ref('looks');
+
+    const catalog    = ref([]);
+    const activeCat  = ref('All');
+    const search     = ref('');
+    const sortBy     = ref('default');
+
+    const slots      = ref({});
+    const outfitLabel= ref('');
+    const dragItem   = ref(null);
+    const dragOver   = ref(null);
+
+    const savedOutfits = ref([]);
+    const wishlist   = ref([]);
+    const cart       = ref([]);
+    const cartOpen   = ref(false);
+
+    const saveModal  = ref(false);
+    const saveName   = ref('');
+    const saveVibe   = ref('');
+    const shareModal = ref(false);
+    const shareLink  = ref('');
+
+    const toasts     = ref([]);
+    let toastId = 0;
+    function showToast(msg, type='') {
+      const id = ++toastId;
+      toasts.value.push({id, msg, type});
+      setTimeout(() => { toasts.value = toasts.value.filter(t=>t.id!==id); }, 2900);
+    }
+
+    /* ── COMPUTED ── */
+    const filteredItems = computed(() => {
+      let items = catalog.value.filter(item => {
+        const catOk = activeCat.value==='All' || item.category===activeCat.value;
+        const q = search.value.toLowerCase();
+        const srchOk = !q
+          || item.name.toLowerCase().includes(q)
+          || item.brand.toLowerCase().includes(q)
+          || (item.tags||[]).some(t=>t.includes(q));
+        return catOk && srchOk && item.inStock;
+      });
+      if (sortBy.value==='price_asc')  items=[...items].sort((a,b)=>a.price-b.price);
+      if (sortBy.value==='price_desc') items=[...items].sort((a,b)=>b.price-a.price);
+      if (sortBy.value==='rating')     items=[...items].sort((a,b)=>b.rating-a.rating);
+      if (sortBy.value==='new')        items=[...items].sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0));
+      return items;
+    });
+
+    const outfitItems = computed(()=>Object.values(slots.value).filter(Boolean));
+    const outfitTotal = computed(()=>outfitItems.value.reduce((s,i)=>s+i.price,0));
+    const cartTotal   = computed(()=>cart.value.reduce((s,i)=>s+i.price,0));
+
+    const sharedTags = computed(()=>{
+      if(outfitItems.value.length<2) return [];
+      const counts={};
+      outfitItems.value.forEach(i=>(i.tags||[]).forEach(t=>counts[t]=(counts[t]||0)+1));
+      return Object.entries(counts)
+        .filter(([,c])=>c>=Math.max(2,Math.floor(outfitItems.value.length/2)))
+        .map(([t])=>t).slice(0,4);
+    });
+
+    const compatScore = computed(()=>{
+      if(outfitItems.value.length<2) return 0;
+      const counts={};
+      outfitItems.value.forEach(i=>(i.tags||[]).forEach(t=>counts[t]=(counts[t]||0)+1));
+      const max=Math.max(0,...Object.values(counts));
+      return Math.min(Math.round((max/outfitItems.value.length)*100),97);
+    });
+
+    const compatColor = computed(()=>{
+      if(compatScore.value>=75) return '#4caf50';
+      if(compatScore.value>=45) return 'var(--saffron)';
+      return 'var(--maroon)';
+    });
+
+    const avgRating = computed(()=>{
+      if(!outfitItems.value.length) return '—';
+      return (outfitItems.value.reduce((s,i)=>s+i.rating,0)/outfitItems.value.length).toFixed(1);
+    });
+
+    /* ── API ── */
+    async function api(path,method='GET',body=null){
+      const opts={method,headers:{'Content-Type':'application/json'}};
+      if(body) opts.body=JSON.stringify(body);
+      const res=await fetch(API+path,opts);
+      if(!res.ok) throw new Error(res.statusText);
+      return method==='DELETE'?null:res.json();
+    }
+
+    /* ── EMBEDDED CATALOG ── */
+    /* Reliable image helper — picsum gives guaranteed loads, seeded by id for consistency */
+    const img = (seed, w=400, h=500) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
+
+    const EMBEDDED_PRODUCTS = [
+      /* ── Ethnic Tops ── */
+      { id:"p1",  name:"Handloom Kurta",          brand:"Fabindia",        price:1899, category:"Ethnic Tops",  emoji:"👘", image:"https://images.unsplash.com/photo-1588117472013-59bb13edafec?w=400&h=500&fit=crop&q=80", tags:["ethnic","casual","cotton","traditional"],   colors:["#c8a97e","#2d5a27","#c41e3a"], rating:4.8, reviews:312, inStock:true,  isNew:false },
+      { id:"p2",  name:"Bandhani Crop Top",        brand:"Global Desi",     price:1299, category:"Ethnic Tops",  emoji:"🌸", image:"https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=400&h=500&fit=crop&q=80", tags:["ethnic","trendy","festive","feminine"],      colors:["#c41e3a","#ff8c00","#ffd700"], rating:4.5, reviews:187, inStock:true,  isNew:true  },
+      { id:"p6",  name:"Chikankari Kurti",         brand:"W for Woman",     price:1599, category:"Ethnic Tops",  emoji:"🪷", image:"https://images.unsplash.com/photo-1632149877166-f75d49000351?w=400&h=500&fit=crop&q=80", tags:["ethnic","elegant","traditional","feminine"], colors:["#ffffff","#f5c6cb","#c8a97e"], rating:4.9, reviews:203, inStock:true,  isNew:false },
+      { id:"p7",  name:"Anarkali Suit",            brand:"Biba",            price:3499, category:"Ethnic Tops",  emoji:"👗", image:"https://images.unsplash.com/photo-1609234656432-603851c06e71?w=400&h=500&fit=crop&q=80", tags:["ethnic","festive","elegant","traditional"],  colors:["#c41e3a","#ffd700","#2d5a27"], rating:4.8, reviews:178, inStock:true,  isNew:true  },
+      { id:"p29", name:"Cotton Printed Kurti",     brand:"Jaipur Kurti",    price:999,  category:"Ethnic Tops",  emoji:"🌺", image:"https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=500&fit=crop&q=80", tags:["ethnic","casual","printed","summer"],        colors:["#ff8c00","#ffd700","#c41e3a"], rating:4.4, reviews:521, inStock:true,  isNew:false },
+      { id:"p30", name:"Embroidered Kurta Set",    brand:"Manyavar",        price:4299, category:"Ethnic Tops",  emoji:"🎖️", image:"https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=400&h=500&fit=crop&q=80", tags:["ethnic","festive","premium","traditional"],  colors:["#ffd700","#1a1a1a","#c41e3a"], rating:4.9, reviews:89,  inStock:true,  isNew:true  },
+
+      /* ── Western Tops ── */
+      { id:"p3",  name:"Linen Shirt",              brand:"Peter England",   price:1499, category:"Western Tops", emoji:"👕", image:"https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=500&fit=crop&q=80", tags:["casual","minimal","western","office"],       colors:["#ffffff","#4a6fa5","#1a1a1a"], rating:4.4, reviews:420, inStock:true,  isNew:false },
+      { id:"p4",  name:"Polo T-Shirt",             brand:"Louis Philippe",  price:1799, category:"Western Tops", emoji:"🩱", image:"https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=400&h=500&fit=crop&q=80", tags:["casual","classic","western","preppy"],       colors:["#1a1a1a","#ffffff","#2d5a27"], rating:4.6, reviews:290, inStock:true,  isNew:false },
+      { id:"p5",  name:"Ikat Print Shirt",         brand:"Fabindia",        price:2299, category:"Western Tops", emoji:"🎽", image:"https://images.unsplash.com/photo-1604006852748-903fccbc4019?w=400&h=500&fit=crop&q=80", tags:["ethnic","casual","printed","summer"],        colors:["#4a6fa5","#c41e3a","#ff8c00"], rating:4.7, reviews:156, inStock:true,  isNew:true  },
+      { id:"p31", name:"Oversized Hoodie",         brand:"HRX",             price:1999, category:"Western Tops", emoji:"🧥", image:"https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400&h=500&fit=crop&q=80", tags:["casual","western","streetwear","comfy"],     colors:["#1a1a1a","#c8a97e","#4a6fa5"], rating:4.3, reviews:673, inStock:true,  isNew:false },
+
+      /* ── Bottoms ── */
+      { id:"p8",  name:"Palazzo Pants",            brand:"W for Woman",     price:1299, category:"Bottoms",      emoji:"👖", image:"https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&h=500&fit=crop&q=80", tags:["ethnic","casual","comfortable","feminine"],  colors:["#1a1a1a","#c8a97e","#4a6fa5"], rating:4.6, reviews:234, inStock:true,  isNew:false },
+      { id:"p9",  name:"Churidar Pants",           brand:"Fabindia",        price:999,  category:"Bottoms",      emoji:"🩲", image:"https://images.unsplash.com/photo-1594938298603-c8148c4b2b37?w=400&h=500&fit=crop&q=80", tags:["ethnic","traditional","comfortable","classic"],colors:["#1a1a1a","#ffffff","#c8a97e"], rating:4.5, reviews:189, inStock:true,  isNew:false },
+      { id:"p10", name:"Slim Fit Chinos",          brand:"Peter England",   price:1799, category:"Bottoms",      emoji:"🦺", image:"https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=400&h=500&fit=crop&q=80", tags:["western","office","casual","minimal"],       colors:["#8b7355","#1a1a1a","#4a6fa5"], rating:4.4, reviews:312, inStock:true,  isNew:false },
+      { id:"p11", name:"Sharara Set",              brand:"Global Desi",     price:2799, category:"Bottoms",      emoji:"🪭", image:"https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=500&fit=crop&q=80", tags:["ethnic","festive","feminine","traditional"],  colors:["#c41e3a","#ffd700","#ff8c00"], rating:4.7, reviews:145, inStock:true,  isNew:true  },
+      { id:"p12", name:"Denim Jeans",              brand:"Roadster",        price:1499, category:"Bottoms",      emoji:"👖", image:"https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=500&fit=crop&q=80", tags:["western","casual","classic","denim"],        colors:["#4a6fa5","#1a1a1a"],           rating:4.3, reviews:567, inStock:true,  isNew:false },
+
+      /* ── Footwear ── */
+      { id:"p13", name:"Kolhapuri Chappals",       brand:"Metro Shoes",     price:1299, category:"Footwear",     emoji:"🥿", image:"https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400&h=500&fit=crop&q=80", tags:["ethnic","traditional","casual","handmade"],  colors:["#8b4513","#c8a97e"],           rating:4.8, reviews:423, inStock:true,  isNew:false },
+      { id:"p14", name:"Ethnic Juttis",            brand:"Needledust",      price:1899, category:"Footwear",     emoji:"👡", image:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=500&fit=crop&q=80", tags:["ethnic","festive","traditional","embroidered"],colors:["#ffd700","#c41e3a","#2d5a27"], rating:4.9, reviews:267, inStock:true,  isNew:true  },
+      { id:"p15", name:"White Sneakers",           brand:"HRX",             price:2499, category:"Footwear",     emoji:"👟", image:"https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&h=500&fit=crop&q=80", tags:["western","casual","sporty","minimal"],       colors:["#ffffff","#1a1a1a"],           rating:4.5, reviews:890, inStock:true,  isNew:false },
+      { id:"p16", name:"Leather Sandals",          brand:"Bata",            price:1799, category:"Footwear",     emoji:"👠", image:"https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&h=500&fit=crop&q=80", tags:["western","casual","comfortable","classic"],  colors:["#8b4513","#1a1a1a","#c8a97e"], rating:4.4, reviews:345, inStock:true,  isNew:false },
+      { id:"p17", name:"Formal Oxford Shoes",      brand:"Lee Cooper",      price:2999, category:"Footwear",     emoji:"👞", image:"https://images.unsplash.com/photo-1614252369475-531eba835eb1?w=400&h=500&fit=crop&q=80", tags:["western","formal","office","classic"],       colors:["#1a1a1a","#8b4513"],           rating:4.6, reviews:178, inStock:true,  isNew:false },
+      { id:"p32", name:"Block Heel Sandals",       brand:"Metro Shoes",     price:2299, category:"Footwear",     emoji:"👠", image:"https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=400&h=500&fit=crop&q=80", tags:["western","festive","feminine","elegant"],    colors:["#c8a97e","#1a1a1a","#c41e3a"], rating:4.5, reviews:214, inStock:true,  isNew:true  },
+
+      /* ── Bags ── */
+      { id:"p18", name:"Potli Bag",                brand:"Craft Village",   price:899,  category:"Bags",         emoji:"👜", image:"https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=400&h=500&fit=crop&q=80", tags:["ethnic","festive","traditional","handmade"],  colors:["#ffd700","#c41e3a","#2d5a27"], rating:4.7, reviews:198, inStock:true,  isNew:false },
+      { id:"p19", name:"Leather Tote Bag",         brand:"Hidesign",        price:4999, category:"Bags",         emoji:"💼", image:"https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=400&h=500&fit=crop&q=80", tags:["western","office","minimal","premium"],      colors:["#8b4513","#1a1a1a","#c8a97e"], rating:4.9, reviews:312, inStock:true,  isNew:false },
+      { id:"p20", name:"Jute Shoulder Bag",        brand:"Fabindia",        price:1299, category:"Bags",         emoji:"🎒", image:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=500&fit=crop&q=80", tags:["ethnic","casual","eco","handmade"],          colors:["#c8a97e","#2d5a27"],           rating:4.5, reviews:156, inStock:true,  isNew:true  },
+      { id:"p21", name:"Embroidered Clutch",       brand:"Anouk",           price:1499, category:"Bags",         emoji:"👛", image:"https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=500&fit=crop&q=80", tags:["ethnic","festive","feminine","elegant"],     colors:["#ffd700","#c41e3a","#4a6fa5"], rating:4.6, reviews:134, inStock:true,  isNew:true  },
+      { id:"p33", name:"Rajasthani Printed Bag",   brand:"Craft Village",   price:1099, category:"Bags",         emoji:"🎒", image:"https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=500&fit=crop&q=80", tags:["ethnic","casual","printed","handmade"],      colors:["#c41e3a","#ff8c00","#ffd700"], rating:4.4, reviews:98,  inStock:true,  isNew:false },
+
+      /* ── Jewellery ── */
+      { id:"p22", name:"Oxidised Silver Earrings", brand:"Tribal Zone",     price:599,  category:"Jewellery",    emoji:"💎", image:"https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=500&fit=crop&q=80", tags:["ethnic","traditional","handmade","boho"],    colors:["#c0c0c0"],                     rating:4.8, reviews:445, inStock:true,  isNew:false },
+      { id:"p23", name:"Temple Necklace",          brand:"Tanishq",         price:3999, category:"Jewellery",    emoji:"📿", image:"https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=400&h=500&fit=crop&q=80", tags:["ethnic","festive","traditional","premium"],  colors:["#ffd700"],                     rating:4.9, reviews:234, inStock:true,  isNew:false },
+      { id:"p26", name:"Kada Bracelet",            brand:"Tribal Zone",     price:799,  category:"Jewellery",    emoji:"⭕", image:"https://images.unsplash.com/photo-1573408301185-9519f94816b5?w=400&h=500&fit=crop&q=80", tags:["ethnic","traditional","boho","handmade"],    colors:["#c0c0c0","#ffd700"],           rating:4.6, reviews:312, inStock:true,  isNew:false },
+      { id:"p34", name:"Kundan Maang Tikka",       brand:"Anouk",           price:1299, category:"Jewellery",    emoji:"👑", image:"https://images.unsplash.com/photo-1601821765780-754fa98637c1?w=400&h=500&fit=crop&q=80", tags:["ethnic","festive","bridal","traditional"],   colors:["#ffd700","#c41e3a"],           rating:4.8, reviews:167, inStock:true,  isNew:true  },
+      { id:"p35", name:"Pearl Stud Earrings",      brand:"Tanishq",         price:2499, category:"Jewellery",    emoji:"🤍", image:"https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&h=500&fit=crop&q=80", tags:["elegant","minimal","western","classic"],     colors:["#ffffff","#c8a97e"],           rating:4.7, reviews:198, inStock:true,  isNew:false },
+
+      /* ── Accessories ── */
+      { id:"p24", name:"Silk Dupatta",             brand:"Fabindia",        price:1299, category:"Accessories",  emoji:"🧣", image:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=500&fit=crop&q=80", tags:["ethnic","elegant","traditional","silk"],     colors:["#c41e3a","#ffd700","#2d5a27"], rating:4.7, reviews:189, inStock:true,  isNew:false },
+      { id:"p25", name:"Pashmina Stole",           brand:"Kilmora",         price:2499, category:"Accessories",  emoji:"🪆", image:"https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400&h=500&fit=crop&q=80", tags:["ethnic","premium","cozy","traditional"],     colors:["#c8a97e","#c41e3a","#4a6fa5"], rating:4.8, reviews:167, inStock:true,  isNew:true  },
+      { id:"p36", name:"Ikat Print Scarf",         brand:"Fabindia",        price:899,  category:"Accessories",  emoji:"🧣", image:"https://images.unsplash.com/photo-1496217590455-aa63a8350eea?w=400&h=500&fit=crop&q=80", tags:["ethnic","casual","printed","cotton"],        colors:["#4a6fa5","#c41e3a","#ffd700"], rating:4.4, reviews:112, inStock:true,  isNew:false },
+
+      /* ── Outerwear ── */
+      { id:"p27", name:"Nehru Jacket",             brand:"Manyavar",        price:3999, category:"Outerwear",    emoji:"🥼", image:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&q=80", tags:["ethnic","formal","festive","traditional"],   colors:["#1a1a1a","#c8a97e","#2d5a27"], rating:4.9, reviews:278, inStock:true,  isNew:false },
+      { id:"p28", name:"Woolen Shawl",             brand:"Fabindia",        price:2199, category:"Outerwear",    emoji:"🧥", image:"https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=400&h=500&fit=crop&q=80", tags:["ethnic","cozy","winter","traditional"],      colors:["#8b7355","#c41e3a","#2d5a27"], rating:4.7, reviews:145, inStock:true,  isNew:false },
+      { id:"p37", name:"Bandhgala Coat",           brand:"Manyavar",        price:5499, category:"Outerwear",    emoji:"🧣", image:"https://images.unsplash.com/photo-1617922001439-4a2e6562f328?w=400&h=500&fit=crop&q=80", tags:["ethnic","formal","premium","festive"],       colors:["#1a1a1a","#c8a97e"],           rating:4.9, reviews:91,  inStock:true,  isNew:true  },
+      { id:"p38", name:"Denim Jacket",             brand:"Roadster",        price:2299, category:"Outerwear",    emoji:"🧥", image:"https://images.unsplash.com/photo-1551537482-f2075a1d41f2?w=400&h=500&fit=crop&q=80", tags:["western","casual","classic","denim"],        colors:["#4a6fa5","#1a1a1a"],           rating:4.4, reviews:445, inStock:true,  isNew:false },
+    ];
+
+    async function fetchAll(){
+      loading.value=true;
+      try{
+        const [prods,outfits,wl,cartData]=await Promise.all([
+          api('/products'),api('/outfits'),api('/wishlist'),api('/cart'),
+        ]);
+        catalog.value=prods.length ? prods : EMBEDDED_PRODUCTS;
+        savedOutfits.value=outfits;
+        wishlist.value=wl;
+        cart.value=cartData;
+        apiLive.value=true;
+      }catch{
+        apiLive.value=false;
+        catalog.value=EMBEDDED_PRODUCTS;
+        showToast('Showing offline catalog','warn');
+      }finally{
+        loading.value=false;
+      }
+    }
+
+    /* ── HELPERS ── */
+    function slotKey(item){return CAT_SLOT[item.category]||'top'}
+    function isInOutfit(item){return Object.values(slots.value).some(s=>s&&s.id===item.id)}
+    function isWished(item){return wishlist.value.some(w=>w.id===item.id)}
+    function totalOf(items){return (items||[]).reduce((s,i)=>s+i.price,0)}
+
+    /* ── BUILDER ── */
+    function toggleItem(item){
+      const key=slotKey(item);
+      if(slots.value[key]&&slots.value[key].id===item.id){ removeSlot(key); }
+      else{
+        slots.value={...slots.value,[key]:item};
+        showToast(`${item.emoji} ${item.name} added!`,'success');
+      }
+    }
+    function removeSlot(key){
+      const item=slots.value[key];
+      const s={...slots.value};delete s[key];slots.value=s;
+      if(item) showToast(`${item.name} removed`);
+    }
+    function clearOutfit(){slots.value={};outfitLabel.value='';showToast('Canvas cleared')}
+    function shuffleOutfit(){
+      const newSlots={};
+      SLOT_DEFS.forEach(sd=>{
+        const cands=catalog.value.filter(i=>slotKey(i)===sd.key&&i.inStock);
+        if(cands.length) newSlots[sd.key]=cands[Math.floor(Math.random()*cands.length)];
+      });
+      slots.value=newSlots;
+      showToast('🎲 Random outfit ready!','success');
+    }
+    function onDrop(key){
+      if(dragItem.value){slots.value={...slots.value,[key]:dragItem.value};dragItem.value=null;}
+      dragOver.value=null;
+    }
+
+    /* ── WISHLIST ── */
+    async function toggleWish(item){
+      if(isWished(item)){
+        const ex=wishlist.value.find(w=>w.id===item.id);
+        if(ex){ try{await api('/wishlist/'+ex.id,'DELETE')}catch{} }
+        wishlist.value=wishlist.value.filter(w=>w.id!==item.id);
+        showToast(`${item.name} removed from wishlist`);
+      }else{
+        try{ const s=await api('/wishlist','POST',item); wishlist.value.push(s); }
+        catch{ wishlist.value.push({...item}); }
+        showToast(`${item.emoji} Added to wishlist!`,'success');
+        rightTab.value='wishlist';
+      }
+    }
+
+    /* ── SAVE / LOAD ── */
+    function openSave(){
+      saveName.value=outfitLabel.value||'';
+      saveVibe.value=sharedTags.value.join(', ');
+      saveModal.value=true;
+    }
+    async function saveOutfit(){
+      if(!saveName.value.trim()) return;
+      const outfit={
+        name:saveName.value.trim(),vibe:saveVibe.value.trim(),
+        items:outfitItems.value,total:outfitTotal.value,
+        compatScore:compatScore.value,
+        createdAt:new Date().toISOString(),
+      };
+      try{
+        const saved=await api('/outfits','POST',outfit);
+        savedOutfits.value.unshift(saved);
+        showToast(`✦ "${saved.name}" saved!`,'success');
+      }catch{
+        outfit.id=Date.now().toString();
+        savedOutfits.value.unshift(outfit);
+        showToast('Locally saved (API offline)','warn');
+      }
+      saveModal.value=false;rightTab.value='looks';
+    }
+    function loadOutfit(o){
+      slots.value={};outfitLabel.value=o.name;
+      o.items.forEach(item=>{slots.value[slotKey(item)]=item;});
+      showToast(`"${o.name}" loaded`);
+    }
+    async function deleteOutfit(o){
+      try{await api('/outfits/'+o.id,'DELETE')}catch{}
+      savedOutfits.value=savedOutfits.value.filter(x=>x.id!==o.id);
+      showToast('Look deleted');
+    }
+
+    /* ── CART ── */
+    function addAllToCart(){
+      let added=0;
+      outfitItems.value.forEach(item=>{
+        if(!cart.value.find(c=>c.id===item.id)){cart.value.push(item);added++;}
+      });
+      showToast(`${added} items added to cart`,'success');
+    }
+    function addOutfitToCart(o){
+      let added=0;
+      o.items.forEach(item=>{
+        if(!cart.value.find(c=>c.id===item.id)){cart.value.push(item);added++;}
+      });
+      showToast(`"${o.name}" → cart (${added} items)`,'success');
+    }
+    async function checkout(){
+      const order={items:cart.value,total:cartTotal.value,status:'pending',createdAt:new Date().toISOString()};
+      try{await api('/orders','POST',order)}catch{}
+      cart.value=[];cartOpen.value=false;
+      showToast('✦ Order placed! Thank you 🙏','success');
+    }
+
+    /* ── SHARE ── */
+    function openShare(){
+      const ids=outfitItems.value.map(i=>i.id).join(',');
+      shareLink.value=window.location.href.split('?')[0]+'?outfit='+ids;
+      shareModal.value=true;
+    }
+    function copyLink(){
+      navigator.clipboard?.writeText(shareLink.value);
+      showToast('Link copied!','success');
+      shareModal.value=false;
+    }
+
+    onMounted(async()=>{
+      await fetchAll();
+      const params=new URLSearchParams(window.location.search);
+      const ids=params.get('outfit');
+      if(ids&&catalog.value.length){
+        ids.split(',').forEach(id=>{
+          const item=catalog.value.find(p=>p.id===id);
+          if(item) slots.value[slotKey(item)]=item;
+        });
+        if(outfitItems.value.length) showToast('Outfit loaded from link!','success');
+      }
+    });
+
+    return {
+      loading,apiLive,view,rightTab,
+      catalog,activeCat,search,sortBy,
+      CATS:ref(CATS),SLOT_DEFS:ref(SLOT_DEFS),
+      slots,outfitLabel,dragItem,dragOver,
+      savedOutfits,wishlist,cart,cartOpen,
+      saveModal,saveName,saveVibe,shareModal,shareLink,
+      toasts,
+      filteredItems,outfitItems,outfitTotal,cartTotal,
+      sharedTags,compatScore,compatColor,avgRating,
+      isInOutfit,isWished,totalOf,
+      toggleItem,removeSlot,clearOutfit,shuffleOutfit,onDrop,
+      toggleWish,
+      openSave,saveOutfit,loadOutfit,deleteOutfit,
+      addAllToCart,addOutfitToCart,checkout,
+      openShare,copyLink,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
